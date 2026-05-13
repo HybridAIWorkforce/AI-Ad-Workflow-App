@@ -1,0 +1,89 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/ai_ad_workflow/nextjs_space/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  projects      Project[]
+}
+
+model Project {
+  id            String       @id @default(cuid())
+  name          String
+  intakeData    Json
+  currentStep   Int          @default(1)
+  status        String       @default("in_progress")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliverables  Deliverable[]
+  images        ProjectImage[]
+  audios        ProjectAudio[]
+}
+
+model Deliverable {
+  id            String    @id @default(cuid())
+  projectId     String
+  stepNumber    Int
+  content       String    @db.Text
+  approved      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@unique([projectId, stepNumber])
+}
+
+model MasterPrompt {
+  id            String    @id @default(cuid())
+  stepNumber    Int       @unique
+  stepName      String
+  promptText    String    @db.Text
+  updatedAt     DateTime  @updatedAt
+}
+
+model AppSettings {
+  id              String    @id @default(cuid())
+  voiceToneProfile String   @db.Text @default("")
+  updatedAt       DateTime  @updatedAt
+}
+
+model ProjectImage {
+  id            String    @id @default(cuid())
+  projectId     String
+  stepNumber    Int
+  sceneNumber   Int       @default(1)
+  imageUrl      String
+  cloudStoragePath String?
+  promptUsed    String    @db.Text
+  isPublic      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectAudio {
+  id            String    @id @default(cuid())
+  projectId     String
+  stepNumber    Int
+  sceneNumber   Int       @default(1)
+  audioUrl      String
+  cloudStoragePath String?
+  voiceoverText String    @db.Text
+  voiceId       String?
+  isPublic      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
